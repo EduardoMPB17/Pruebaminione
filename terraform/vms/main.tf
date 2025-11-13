@@ -1,6 +1,6 @@
 resource "opennebula_image" "alpine" {
-  name         = "Alpine Linux 3.17"
-  description  = "Apline 3.17 Terraform image"
+  name         = "Alpine Linux 3.17 Terraform"
+  description  = "Alpine 3.17 Terraform image"
   datastore_id = 1
   persistent   = false
   lock         = "MANAGE"
@@ -11,7 +11,7 @@ resource "opennebula_image" "alpine" {
 }
 
 resource "opennebula_template" "alpine" {
-  name        = "Apline Linux 3.17"
+  name        = "Alpine Linux 3.17 Terraform"
   description = "Alpine Terraform VM template"
   cpu         = 0.3
   vcpu        = 1
@@ -19,11 +19,11 @@ resource "opennebula_template" "alpine" {
   permissions = "660"
 
   context = {
-    NETWORK      = "YES"
-    SET_HOSTNAME     = "$NAME"
-    USERNAME     = "amellado"
+    NETWORK         = "YES"
+    SET_HOSTNAME    = "$NAME"
+    USERNAME        = "eduardo"
     PASSWORD_BASE64 = "bGludXgK"
-    SSH_PUBLIC_KEY = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHwA7zlUpSbbx/UjPdMxDG6T8c0PN3qniOVm5dL2ywjt noname"
+    SSH_PUBLIC_KEY  = file("${path.module}/../ubuntu/.ssh/id_ed25519.pub")
   }
 
   graphics {
@@ -50,12 +50,12 @@ resource "opennebula_template" "alpine" {
 }
 
 resource "opennebula_virtual_machine" "vm" {
-  count = 2
+  count       = 2
   name        = "terravm-${count.index}"
   template_id = opennebula_template.alpine.id
 
   context = {
-    SET_HOSTNAME     = "$NAME"
+    SET_HOSTNAME = "$NAME"
   }
 
   nic {

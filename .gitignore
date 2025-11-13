@@ -1,0 +1,5 @@
+terraform/ubuntu/.ssh/
+**/.terraform/
+**/*.tfstate
+**/*.tfstate.backup
+*.img

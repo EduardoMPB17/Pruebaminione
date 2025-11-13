@@ -1,7 +1,15 @@
+variable "libvirt_disk_path" {
+  description = "path for libvirt pool"
+  default     = "/var/lib/libvirt/images"
+}
+
+variable "ubuntu_18_img_url" {
+  description = "ubuntu 18.04 image"
+  default     = "http://cloud-images.ubuntu.com/releases/bionic/release-20191008/ubuntu-18.04-server-cloudimg-amd64.img"
+}
 
 variable "hostname" {
   default = "minione"
-  description = "Nombre del servidor Canonical MaaS"
 }
 
 variable "domain" {
@@ -21,6 +29,6 @@ variable "diskSize" {
 }
 
 variable "path_to_image" {
-  default = "/home/amellado/vmstore/images"
+  description = "Ruta a la imagen descargada localmente"
+  default     = "./local"
 }
-

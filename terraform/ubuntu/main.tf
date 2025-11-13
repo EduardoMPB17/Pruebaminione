@@ -25,7 +25,7 @@ data "template_file" "user_data" {
   vars = {
     hostname = var.hostname
     fqdn = "${var.hostname}.${var.domain}"
-    public_key = file("~/.ssh/id_ed25519.pub")
+    public_key = file("${path.module}/.ssh/id_ed25519.pub")
   }
 }
 
