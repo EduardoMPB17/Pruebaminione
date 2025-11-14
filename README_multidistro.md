@@ -104,13 +104,13 @@ ansible-playbook -i inventory_rocky.yml install_minione_rocky.yml
 ## Configuraciones Específicas
 
 ### Ubuntu
-- Usuario por defecto: eduardo (grupo admin)
+- Usuario por defecto: vicente (grupo admin)
 - Configuración de locales con locale-gen
 - Instalación de language-pack-es
 - Configuración de teclado en español
 
 ### Rocky Linux
-- Usuario por defecto: eduardo (grupo wheel)
+- Usuario por defecto: vicente (grupo wheel)
 - Configuración de locales con localectl
 - Instalación de glibc-langpack-es
 - Instalación automática de EPEL
@@ -155,7 +155,7 @@ Contraseña: Disponible en `/var/lib/one/.one/one_auth` en cada VM
 ### Problemas de conectividad SSH
 ```bash
 # Verificar claves
-ssh -i .ssh/id_ed25519 eduardo@IP_VM
+ssh -i .ssh/id_ed25519 vicente@IP_VM
 
 # Regenerar claves si es necesario
 ssh-keygen -t ed25519 -f .ssh/id_ed25519 -N ""

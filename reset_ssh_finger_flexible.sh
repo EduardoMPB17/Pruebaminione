@@ -5,13 +5,13 @@
 
 if [ $# -eq 0 ]; then
     echo "❌ Uso: $0 <IP> [usuario] [contraseña]"
-    echo "Ejemplo para Ubuntu: $0 172.16.25.2 eduardo 123"
-    echo "Ejemplo para Rocky:  $0 172.16.25.61 eduardo 123"
+    echo "Ejemplo para Ubuntu: $0 172.16.25.2 vicente 123"
+    echo "Ejemplo para Rocky:  $0 172.16.25.61 vicente 123"
     exit 1
 fi
 
 host=$1
-user=${2:-eduardo}
+user=${2:-vicente}
 pass=${3:-123}
 
 echo "🧹 Limpiando huella SSH para $host..."

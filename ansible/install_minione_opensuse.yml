@@ -1,0 +1,85 @@
+---
+- name: Instalar Minione en openSUSE
+  hosts: minone-suse  # <-- Apunta al nuevo grupo
+  gather_facts: no
+  tasks:
+    - name: Asegurar entrada en /etc/hosts
+      ansible.builtin.lineinfile:
+        path: /etc/hosts
+        regexp: '^\S+\s+minione-suse\.midominio\.org\s+minione-suse' # <-- Nombre de host
+        line: '{{ ansible_host }} minione-suse.midominio.org minione-suse' # <-- Nombre de host
+        state: present
+      become: true
+
+    - name: Actualizar cache y paquetes del sistema (zypper)
+      ansible.builtin.zypper:
+        name: "*"
+        state: latest
+        update_cache: yes
+      become: true
+
+    - name: Instalar dependencias necesarias para openSUSE
+      ansible.builtin.zypper:
+        name:
+          - wget
+          - curl
+          - python3-pip
+          - git
+          - vim
+          - bash-completion
+          - firewalld  # Nos aseguramos que esté
+        state: present
+      become: true
+
+    - name: Descargar Minione
+      ansible.builtin.get_url:
+        url: 'https://github.com/OpenNebula/minione/releases/latest/download/minione'
+        dest: /tmp/minione
+        mode: '0755'
+
+    - name: Verificar que minione se descargó correctamente
+      ansible.builtin.stat:
+        path: /tmp/minione
+      register: minione_file
+
+    - name: Fallar si minione no existe
+      ansible.builtin.fail:
+        msg: "No se pudo descargar minione"
+      when: not minione_file.stat.exists
+
+    - name: Ejecutar instalador Minione y capturar salida
+      ansible.builtin.shell: |
+        echo yes | bash /tmp/minione 2>&1
+      args:
+        executable: /bin/bash
+      become: true
+      register: minione_install
+      timeout: 1800  # 30 minutos timeout
+
+    - name: Mostrar salida de la instalación
+      ansible.builtin.debug:
+        var: minione_install.stdout_lines
+
+    - name: Verificar que los servicios de OpenNebula estén corriendo
+      ansible.builtin.systemd:
+        name: "{{ item }}"
+        state: started
+        enabled: yes
+      become: true
+      with_items:
+        - opennebula
+        - opennebula-sunstone
+      ignore_errors: true # Importante, por si el script falla al instalarlos
+
+    - name: Mostrar información final
+      ansible.builtin.debug:
+        msg: |
+          ============================================
+          Instalación de MiniOne en openSUSE completada
+          
+          Puedes acceder a Sunstone en:
+          http://{{ ansible_host }}:9869
+          
+          Usuario: oneadmin
+          Contraseña: Revisar /var/lib/one/.one/one_auth
+          ============================================

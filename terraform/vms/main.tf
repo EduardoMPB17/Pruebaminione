@@ -21,7 +21,7 @@ resource "opennebula_template" "alpine" {
   context = {
     NETWORK         = "YES"
     SET_HOSTNAME    = "$NAME"
-    USERNAME        = "eduardo"
+    USERNAME        = "vicente"
     PASSWORD_BASE64 = "bGludXgK"
     SSH_PUBLIC_KEY  = file("${path.module}/../ubuntu/.ssh/id_ed25519.pub")
   }
