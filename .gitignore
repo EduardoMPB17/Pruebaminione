@@ -3,3 +3,6 @@ terraform/ubuntu/.ssh/
 **/*.tfstate
 **/*.tfstate.backup
 *.img
+*.qcow2
+terraform/rocky/.ssh/
+terraform/rocky/local/

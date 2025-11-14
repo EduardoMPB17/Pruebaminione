@@ -1,0 +1,97 @@
+---
+- name: Instalar Minione en Rocky Linux
+  hosts: minone-rocky
+  gather_facts: no
+  tasks:
+    - name: Asegurar entrada en /etc/hosts
+      ansible.builtin.lineinfile:
+        path: /etc/hosts
+        regexp: '^\S+\s+minione-rocky\.midominio\.org\s+minione-rocky'
+        line: '{{ ansible_host }} minione-rocky.midominio.org minione-rocky'
+        state: present
+      become: true
+
+    - name: Verificar si EPEL está instalado
+      ansible.builtin.command: rpm -qa epel-release
+      register: epel_check
+      ignore_errors: true
+      changed_when: false
+
+    - name: Instalar EPEL repository si no está disponible
+      ansible.builtin.dnf:
+        name: epel-release
+        state: present
+      become: true
+      when: epel_check.stdout == ""
+
+    - name: Actualizar paquetes del sistema
+      ansible.builtin.dnf:
+        name: "*"
+        state: latest
+      become: true
+
+    - name: Instalar dependencias necesarias para Rocky Linux
+      ansible.builtin.dnf:
+        name:
+          - wget
+          - curl
+          - python3
+          - python3-pip
+          - git
+          - vim
+          - bash-completion
+        state: present
+      become: true
+
+    - name: Descargar Minione
+      ansible.builtin.get_url:
+        url: 'https://github.com/OpenNebula/minione/releases/latest/download/minione'
+        dest: /tmp/minione
+        mode: '0755'
+
+    - name: Verificar que minione se descargó correctamente
+      ansible.builtin.stat:
+        path: /tmp/minione
+      register: minione_file
+
+    - name: Fallar si minione no existe
+      ansible.builtin.fail:
+        msg: "No se pudo descargar minione"
+      when: not minione_file.stat.exists
+
+    - name: Ejecutar instalador Minione y capturar salida
+      ansible.builtin.shell: |
+        echo yes | bash /tmp/minione 2>&1
+      args:
+        executable: /bin/bash
+      become: true
+      register: minione_install
+      timeout: 1800  # 30 minutos timeout
+
+    - name: Mostrar salida de la instalación
+      ansible.builtin.debug:
+        var: minione_install.stdout_lines
+
+    - name: Verificar que los servicios de OpenNebula estén corriendo
+      ansible.builtin.systemd:
+        name: "{{ item }}"
+        state: started
+        enabled: yes
+      become: true
+      with_items:
+        - opennebula
+        - opennebula-sunstone
+      ignore_errors: true
+
+    - name: Mostrar información final
+      ansible.builtin.debug:
+        msg: |
+          ============================================
+          Instalación de MiniOne en Rocky Linux completada
+          
+          Puedes acceder a Sunstone en:
+          http://{{ ansible_host }}:9869
+          
+          Usuario: oneadmin
+          Contraseña: Revisar /var/lib/one/.one/one_auth
+          ============================================
