@@ -1,119 +1,52 @@
-# MiniOne con Rocky Linux
+# MiniOne sobre openSUSE Leap 15.6  
+Implementación de MiniOne utilizando Terraform + Libvirt, con imágenes NoCloud y cloud-init adaptado específicamente para openSUSE.
 
-Este directorio contiene la implementación de MiniOne sobre Rocky Linux 9, manteniendo la misma funcionalidad que la versión Ubuntu pero adaptada específicamente para Rocky Linux.
+Esta versión mantiene **la misma estructura y automatización** que las variantes para Ubuntu y Rocky, pero incluye ajustes especiales porque **openSUSE no usa Netplan**, sino `wicked` con archivos `ifcfg-*`.
 
-## Diferencias principales con Ubuntu
+---
 
-### 1. Gestor de paquetes
-- **Ubuntu**: apt/apt-get
-- **Rocky Linux**: dnf (heredero de yum)
+## 🧩 Diferencias clave con Ubuntu/Rocky
 
-### 2. Repositorios adicionales
-- Rocky Linux requiere EPEL (Extra Packages for Enterprise Linux) para algunos paquetes
+### 🔌 Gestión de red
+- Ubuntu/Rocky → cloud-init + Netplan  
+- **openSUSE → wicked + archivos `/etc/sysconfig/network/ifcfg-*`**
 
-### 3. Configuración del sistema
-- **Grupos de usuarios**: Rocky usa `wheel` en lugar de `admin`
-- **Locales**: Configuración específica con `localectl`
-- **Firewall**: firewalld en lugar de ufw
+Por ello, esta versión **no usa `network_config` de cloud-init**.  
+Toda la red se configura vía `write_files` en `cloud_init_simple.cfg`.
 
-### 4. Servicios del sistema
-- Uso de systemctl para la gestión de servicios (igual que Ubuntu moderno)
+### 📦 Paquetes y sistema
+- openSUSE usa `zypper`.
+- No requiere repos adicionales.
+- El firewall por defecto es `firewalld`.
+- El grupo administrativo es `wheel`.
 
-## Estructura específica para Rocky
+---
 
-```
-terraform/rocky/
-├── main.tf              # Configuración principal de la VM
-├── variables.tf         # Variables específicas para Rocky
-├── provider.tf          # Configuración del proveedor libvirt
-├── networks.tf          # Definición de redes (igual que Ubuntu)
-├── terraform.tf         # Requisitos de Terraform
-├── outputs.tf           # Salidas de Terraform
+## 📁 Estructura del proyecto
+
+terraform/opensuse/
+├── main.tf # Configuración principal de la VM
+├── networks.tf # Definición de las redes (manage / netstack)
+├── variables.tf # Variables ajustables
+├── provider.tf # Proveedor libvirt
+├── outputs.tf # Outputs útiles (IP, etc.)
 ├── config/
-│   ├── cloud_init.cfg   # Cloud-init adaptado para Rocky
-│   └── network_config.cfg # Configuración de red
-├── .ssh/                # Claves SSH
-└── local/               # Imagen de Rocky Linux
-    └── Rocky-9-GenericCloud.latest.x86_64.qcow2
-```
+│ └── cloud_init_simple.cfg # Cloud-init 100% compatible con openSUSE
+├── .ssh/
+│ ├── id_ed25519
+│ └── id_ed25519.pub
+├── deploy_opensuse.sh # Script de despliegue automático
+├── limpia.sh # Limpieza de recursos
+└── local/
+└── openSUSE-Leap-15.6.x86_64-NoCloud.qcow2
 
-## Pasos para implementar
 
-### 1. Preparar Terraform
+---
+
+## 🚀 Despliegue
+
+Desde este directorio:
+
 ```bash
-cd terraform/rocky
-terraform init
-terraform plan
-terraform apply
-```
-
-### 2. Obtener IP de la VM
-```bash
-terraform output ips
-```
-
-### 3. Actualizar inventario de Ansible
-Editar `ansible/inventory_rocky.yml` con la IP obtenida.
-
-### 4. Ejecutar instalación con Ansible
-```bash
-cd ../../ansible
-ansible-playbook -i inventory_rocky.yml install_minione_rocky.yml
-```
-
-## Características específicas de la configuración
-
-### Cloud-init para Rocky Linux
-- Instalación automática de EPEL repository
-- Configuración de locales en español
-- Instalación de herramientas de desarrollo
-- Habilitación del firewall con firewalld
-- Configuración específica del grupo `wheel`
-
-### Playbook Ansible para Rocky
-- Verificación e instalación de EPEL si es necesario
-- Actualización completa del sistema con dnf
-- Instalación de dependencias específicas para Rocky
-- Timeout extendido para la instalación (30 minutos)
-- Verificación de servicios post-instalación
-
-## Comandos útiles para gestión
-
-### Ver estado de servicios OpenNebula
-```bash
-sudo systemctl status opennebula
-sudo systemctl status opennebula-sunstone
-```
-
-### Gestión del firewall
-```bash
-sudo firewall-cmd --list-all
-sudo firewall-cmd --permanent --add-port=9869/tcp
-sudo firewall-cmd --reload
-```
-
-### Verificar instalación de EPEL
-```bash
-sudo dnf repolist | grep epel
-```
-
-## Troubleshooting específico para Rocky Linux
-
-### Problema: No se puede instalar paquetes Python
-```bash
-sudo dnf install python3-pip
-```
-
-### Problema: Firewall bloquea conexiones
-```bash
-sudo firewall-cmd --permanent --add-service=http
-sudo firewall-cmd --permanent --add-service=https
-sudo firewall-cmd --permanent --add-port=9869/tcp
-sudo firewall-cmd --reload
-```
-
-### Problema: Locales no configurados
-```bash
-sudo localectl list-locales | grep es
-sudo localectl set-locale LANG=es_ES.UTF-8
-```
+cd terraform/opensuse
+./deploy_opensuse.sh

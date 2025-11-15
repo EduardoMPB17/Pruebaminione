@@ -36,14 +36,25 @@ echo "4️⃣ Aplicando configuración..."
 terraform apply -auto-approve
 
 echo "5️⃣ Obteniendo IP de la VM..."
-# Espera a que la IP esté disponible
 VM_IP=""
+COUNT=0
+MAX_WAIT=30 # Esperar 30 intentos (60 segundos)
 while [ -z "$VM_IP" ]; do
-  echo "Esperando IP..."
-  VM_IP=$(terraform output -raw ips | tr -d '[]"' | tr -d ' ')
-  sleep 2
+  # El 'terraform output -raw' ahora funciona gracias al try() en outputs.tf
+  VM_IP=$(terraform output -raw ips)
+  
+  if [ -z "$VM_IP" ]; then
+    COUNT=$((COUNT+1))
+    if [ $COUNT -gt $MAX_WAIT ]; then
+      echo "❌ ERROR: Límite de tiempo esperando la IP. La VM no arrancó o cloud-init falló."
+      echo "Inicia la depuración manual. Ejecuta 'sudo virt-viewer minione-suse' para ver la consola."
+      exit 1
+    fi
+    echo "Esperando IP... (Intento $COUNT/$MAX_WAIT)"
+    sleep 2
+  fi
 done
-echo "IP de la VM: $VM_IP"
+echo "✅ IP de la VM obtenida: $VM_IP"
 
 # Esperar a que la VM esté disponible para SSH
 echo "6️⃣ Esperando que SSH esté disponible..."

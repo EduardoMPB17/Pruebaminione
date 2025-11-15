@@ -1,9 +1,31 @@
-#--- GET ISO IMAGE
+##############################################
+#   PROVEEDORES
+##############################################
 
-# Fetch the Rocky Linux image
+terraform {
+  required_providers {
+    libvirt = {
+      source  = "dmacvicar/libvirt"
+      version = "0.7.6"
+    }
+    null = {
+      source  = "hashicorp/null"
+      version = "3.2.4"
+    }
+    template = {
+      source  = "hashicorp/template"
+      version = "2.2.0"
+    }
+  }
+}
+
+##############################################
+#  IMAGEN BASE openSUSE
+##############################################
+
 resource "libvirt_volume" "os_image" {
-  name = "${var.hostname}-os_image"
-  pool = "pool"
+  name   = "${var.hostname}-os_image"
+  pool   = "pool"
   source = "${var.path_to_image}/openSUSE-Leap-15.6.x86_64-NoCloud.qcow2"
   format = "qcow2"
 }
@@ -16,64 +38,71 @@ resource "null_resource" "resize_volume" {
   depends_on = [libvirt_volume.os_image]
 }
 
-#--- CUSTOMIZE ISO IMAGE
+##############################################
+#  CLOUD-INIT: SOLO user_data
+##############################################
 
-# 1a. Retrieve our local cloud_init.cfg and update its content (= add ssh-key) using variables
 data "template_file" "user_data" {
   template = file("${path.module}/config/cloud_init_simple.cfg")
   vars = {
-    hostname = var.hostname
-    fqdn = "${var.hostname}.${var.domain}"
+    hostname   = var.hostname
+    fqdn       = "${var.hostname}.${var.domain}"
     public_key = file("${path.module}/.ssh/id_ed25519.pub")
   }
 }
 
-# 1b. Save the result as init.cfg
 data "template_cloudinit_config" "config" {
-  gzip = false
+  gzip          = false
   base64_encode = false
+
   part {
-    filename = "init.cfg"
+    filename     = "init.cfg"
     content_type = "text/cloud-config"
-    content = "${data.template_file.user_data.rendered}"
+    content      = data.template_file.user_data.rendered
   }
 }
 
-# 2. Retrieve our network_config
-data "template_file" "network_config" {
-  template = file("${path.module}/config/network_config.cfg")
-}
-
-# 3. Add ssh-key and network config to the instance
 resource "libvirt_cloudinit_disk" "commoninit" {
-  name = "${var.hostname}-commoninit.iso"
-  pool = "pool"
-  user_data      = data.template_cloudinit_config.config.rendered
-  network_config = data.template_file.network_config.rendered
+  name      = "${var.hostname}-commoninit.iso"
+  pool      = "pool"
+  user_data = data.template_cloudinit_config.config.rendered
 }
 
-#--- CREATE VM
+##############################################
+#  REDES
+##############################################
+
+resource "libvirt_network" "netstack_network" {
+  name      = "netstack"
+  mode      = "none"
+  autostart = true
+}
+
+##############################################
+#  CREAR LA VM
+##############################################
 
 resource "libvirt_domain" "domain-servermaas" {
-  name = "${var.hostname}"
+  name   = var.hostname
   memory = var.memoryMB
-  vcpu = var.cpu
+  vcpu   = var.cpu
 
   disk {
     volume_id = libvirt_volume.os_image.id
   }
 
+  # eth0 → red "manage"
   network_interface {
     network_name = "manage"
   }
 
+  # eth1 → red "netstack"
   network_interface {
     network_name = "netstack"
   }
 
   cloudinit = libvirt_cloudinit_disk.commoninit.id
 
-  # Rocky Linux benefits from having a serial console
   console {
     type        = "pty"
     target_port = "0"
@@ -85,8 +114,8 @@ resource "libvirt_domain" "domain-servermaas" {
   }
 
   graphics {
-    type = "spice"
+    type        = "spice"
     listen_type = "address"
-    autoport = "true"
+    autoport    = true
   }
 }
