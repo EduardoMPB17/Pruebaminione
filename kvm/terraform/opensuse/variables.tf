@@ -24,6 +24,6 @@ variable "diskSize" {
 }
 
 variable "path_to_image" {
-  description = "Ruta relativa a la imagen qcow2 (normalmente './local')"
-  default     = "./local"
+  description = "Ruta absoluta a la imagen qcow2 de openSUSE Leap 15.6 NoCloud"
+  default     = "/home/vicente/vmstore/images" 
 }

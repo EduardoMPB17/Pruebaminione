@@ -17,15 +17,17 @@ terraform {
 
 # --- IMAGEN ---
 resource "libvirt_volume" "os_image" {
-  name   = "${var.hostname}-os_image_v2"  # <--- CAMBIO AQUÍ: Añadí '_v2'  
-  pool   = "pool"
+  name   = "${var.hostname}-os_image_v3"  # <--- CAMBIO A v3
+  pool   = "default"                       # <--- CAMBIO A 'default' (más seguro)
+  # source sigue apuntando a tu archivo local, eso está bien
   source = "${var.path_to_image}/openSUSE-Leap-15.6.x86_64-NoCloud.qcow2"
   format = "qcow2"
 }
 
 resource "null_resource" "resize_volume" {
   provisioner "local-exec" {
-    command = "sudo qemu-img resize ${libvirt_volume.os_image.id} ${var.diskSize}G"
+    # OJO: Ahora la ruta es en /var/lib/libvirt/images/
+    command = "sudo qemu-img resize /var/lib/libvirt/images/${libvirt_volume.os_image.name} ${var.diskSize}G"
   }
   depends_on = [libvirt_volume.os_image]
 }
@@ -52,7 +54,7 @@ data "template_cloudinit_config" "config" {
 
 resource "libvirt_cloudinit_disk" "commoninit" {
   name      = "${var.hostname}-commoninit.iso"
-  pool      = "pool"
+  pool      = "default"
   user_data = data.template_cloudinit_config.config.rendered
 }
 
@@ -78,6 +80,8 @@ resource "libvirt_domain" "domain-servermaas" {
   # INTERFAZ 2: NETSTACK
   network_interface {
     network_name   = "netstack"
+    # Usamos la MAC que definimos en netstack.xml para asegurar la IP 172.16.100.100
+    mac            = "52:54:00:09:f3:4f"
     wait_for_lease = true
   }
 

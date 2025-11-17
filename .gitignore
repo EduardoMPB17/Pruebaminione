@@ -1,8 +1,9 @@
-terraform/ubuntu/.ssh/
 **/.terraform/
 **/*.tfstate
 **/*.tfstate.backup
 *.img
 *.qcow2
-terraform/rocky/.ssh/
-terraform/rocky/local/
+kvm/terraform/opensuse/.ssh/
+kvm/terraform/opensuse/local/
+kvm/terraform/ubuntu/.ssh/
+kvm/terraform/ubuntu/local/

@@ -9,13 +9,13 @@ resource "libvirt_volume" "os_image" {
   format = "qcow2"
 }
 
-resource "null_resource" "resize_volume" {
+resource "null_resource" "fix_permissions" {
   provisioner "local-exec" {
-    command = "sudo qemu-img resize ${libvirt_volume.os_image.id} ${var.diskSize}G"
+    command = "sudo chown vicente:libvirt ${libvirt_volume.os_image.id} && sudo chmod 664 ${libvirt_volume.os_image.id}"
   }
-
   depends_on = [libvirt_volume.os_image]
 }
+
 
 #--- CUSTOMIZE ISO IMAGE
 
