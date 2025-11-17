@@ -1,0 +1,11 @@
+<network>
+  <name>netstack</name>
+  <forward mode='nat'/>
+  <bridge name='virbr5' stp='on' delay='0'/>
+  <domain name='netstack'/>
+  <ip address='172.16.100.1' netmask='255.255.255.0'>
+    <dhcp>
+      <range start='172.16.100.100' end='172.16.100.200'/>
+    </dhcp>
+  </ip>
+</network>
