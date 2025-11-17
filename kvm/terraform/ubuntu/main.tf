@@ -66,11 +66,14 @@ resource "libvirt_domain" "domain-servermaas" {
 
   network_interface {
     network_name = "manage"
+    mac = "52:54:00:F2:CA:68"
   }
 
   network_interface {
     network_name = "netstack"
+    mac = "52:54:00:F6:CD:D6"
   }
+
 
   cloudinit = libvirt_cloudinit_disk.commoninit.id
 

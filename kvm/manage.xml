@@ -2,10 +2,11 @@
   <name>manage</name>
   <forward mode='nat'/>
   <bridge name='virbr2' stp='on' delay='0'/>
-  <domain name='manage'/>
   <ip address='172.16.25.1' netmask='255.255.255.0'>
     <dhcp>
-      <host mac='52:54:00:09:f3:3f' name='minione-suse' ip='172.16.25.2'/>
+      <range start='172.16.25.50' end='172.16.25.200'/>
+      <!-- opcional: reserva estática para tu VM por MAC -->
+      <!-- <host mac='52:54:00:F2:CA:68' ip='172.16.25.60'/> -->
     </dhcp>
   </ip>
 </network>

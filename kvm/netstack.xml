@@ -2,10 +2,10 @@
   <name>netstack</name>
   <forward mode='nat'/>
   <bridge name='virbr5' stp='on' delay='0'/>
-  <domain name='netstack'/>
   <ip address='172.16.100.1' netmask='255.255.255.0'>
     <dhcp>
-      <host mac='52:54:00:09:f3:4f' name='minione-opensuse' ip='172.16.100.100'/>
+      <range start='172.16.100.50' end='172.16.100.200'/>
+      <!-- opcional: <host mac='52:54:00:F6:CD:D6' ip='172.16.100.60'/> -->
     </dhcp>
   </ip>
 </network>
