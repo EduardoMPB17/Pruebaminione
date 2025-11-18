@@ -1,15 +1,27 @@
-output "ips" {
-  description = "La primera dirección IP de la primera interfaz de red (manage)."
-  
-  # try() intenta obtener la IP. Si falla (por Invalid index), 
-  # devuelve un string vacío "" en lugar de un error.
-  value = try(libvirt_domain.domain-servermaas.network_interface[0].addresses[0], "")
+output "vm_names" {
+  description = "Nombres de las VMs creadas"
+  value       = [for vm in opennebula_virtual_machine.vm : vm.name]
 }
 
-output "macs" {
-  description = "Las direcciones MAC de las interfaces de red."
-  value = [
-    try(libvirt_domain.domain-servermaas.network_interface[0].mac, ""),
-    try(libvirt_domain.domain-servermaas.network_interface[1].mac, ""),
-  ]
+output "vm_ids" {
+  description = "IDs de las VMs en OpenNebula"
+  value       = [for vm in opennebula_virtual_machine.vm : vm.id]
+}
+
+output "vm_macs" {
+  description = "MACs de las NICs de las VMs"
+  value       = flatten([
+    for vm in opennebula_virtual_machine.vm : [
+      for nic in vm.nic : nic.computed_mac
+    ]
+  ])
+}
+
+output "vm_ips" {
+  description = "IPs de las VMs"
+  value       = flatten([
+    for vm in opennebula_virtual_machine.vm : [
+      for nic in vm.nic : nic.computed_ip
+    ]
+  ])
 }

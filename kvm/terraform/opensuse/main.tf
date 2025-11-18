@@ -1,105 +1,76 @@
 terraform {
   required_providers {
-    libvirt = {
-      source  = "dmacvicar/libvirt"
-      version = "0.7.6"
-    }
-    null = {
-      source  = "hashicorp/null"
-      version = "3.2.4"
-    }
-    template = {
-      source  = "hashicorp/template"
-      version = "2.2.0"
+    opennebula = {
+      source  = "OpenNebula/opennebula"
+      version = "~> 1.4"
     }
   }
 }
 
-# --- IMAGEN ---
-resource "libvirt_volume" "os_image" {
-  name   = "${var.hostname}-os_image_v3"  # <--- CAMBIO A v3
-  pool   = "default"                       # <--- CAMBIO A 'default' (más seguro)
-  # source sigue apuntando a tu archivo local, eso está bien
-  source = "${var.path_to_image}/openSUSE-Leap-15.6.x86_64-NoCloud.qcow2"
-  format = "qcow2"
+# Imagen desde el marketplace (openSUSE 15 x86_64)
+resource "opennebula_image" "opensuse15" {
+  name         = "openSUSE 15 x86_64"
+  description  = "openSUSE Terraform image"
+  datastore_id = 1   # usar el datastore de imágenes
+  persistent   = false
+  lock         = "MANAGE"
+  path         = "https://d24fmfybwxpuhu.cloudfront.net/opensuse15-7.0.0-0-20250528.qcow2"
+  dev_prefix   = "vd"
+  driver       = "qcow2"
+  permissions  = "660"
 }
 
-resource "null_resource" "resize_volume" {
-  provisioner "local-exec" {
-    # OJO: Ahora la ruta es en /var/lib/libvirt/images/
-    command = "sudo qemu-img resize /var/lib/libvirt/images/${libvirt_volume.os_image.name} ${var.diskSize}G"
-  }
-  depends_on = [libvirt_volume.os_image]
-}
+# Plantilla de VM
+resource "opennebula_template" "opensuse15" {
+  name        = "openSUSE Terraform Template"
+  description = "VM template for openSUSE 15 x86_64"
+  cpu         = var.cpu
+  vcpu        = var.cpu
+  memory      = var.memoryMB
+  permissions = "660"
 
-# --- CLOUD-INIT ---
-data "template_file" "user_data" {
-  template = file("${path.module}/config/cloud_init_simple.cfg")
-  vars = {
-    hostname   = var.hostname
-    fqdn       = "${var.hostname}.${var.domain}"
-    public_key = file("${path.module}/.ssh/id_ed25519.pub")
-  }
-}
-
-data "template_cloudinit_config" "config" {
-  gzip          = false
-  base64_encode = false
-  part {
-    filename     = "init.cfg"
-    content_type = "text/cloud-config"
-    content      = data.template_file.user_data.rendered
-  }
-}
-
-resource "libvirt_cloudinit_disk" "commoninit" {
-  name      = "${var.hostname}-commoninit.iso"
-  pool      = "default"
-  user_data = data.template_cloudinit_config.config.rendered
-}
-
-# --- VM ---
-resource "libvirt_domain" "domain-servermaas" {
-  name       = var.hostname
-  memory     = var.memoryMB
-  vcpu       = var.cpu
-  qemu_agent = true # IMPORTANTE: True para que reporte la IP
-
-  disk {
-    volume_id = libvirt_volume.os_image.id
-  }
-
-  # INTERFAZ 1: MANAGE (IP ESTÁTICA FIJADA POR MAC EN LIBVIRT)
-  network_interface {
-    network_name   = "manage"
-    # Usamos la MAC que definimos en manage.xml para asegurar la IP 172.16.25.2
-    mac            = "52:54:00:09:f3:3f"
-    wait_for_lease = true # Terraform esperará a que tenga IP
-  }
-
-  # INTERFAZ 2: NETSTACK
-  network_interface {
-    network_name   = "netstack"
-    # Usamos la MAC que definimos en netstack.xml para asegurar la IP 172.16.100.100
-    mac            = "52:54:00:09:f3:4f"
-    wait_for_lease = true
-  }
-
-  cloudinit = libvirt_cloudinit_disk.commoninit.id
-
-  console {
-    type        = "pty"
-    target_port = "0"
-    target_type = "serial"
-  }
-
-  cpu {
-    mode = "host-passthrough"
+  context = {
+    NETWORK         = "YES" 
+    SET_HOSTNAME    = "$NAME"
+    USERNAME        = "vicente"
+    PASSWORD_BASE64 = "MTIzCg==" # "123" en base64
+    SSH_PUBLIC_KEY  = file("~/.ssh/id_minione.pub")
   }
 
   graphics {
-    type        = "spice"
-    listen_type = "address"
-    autoport    = true
+    type   = "VNC"
+    listen = "0.0.0.0"
+    keymap = "es"
+  }
+
+  os {
+    arch = "x86_64"
+    boot = "disk0"
+  }
+
+  cpumodel {
+    model = "host-passthrough"
+  }
+
+  disk {
+    image_id = opennebula_image.opensuse15.id
+    size     = var.diskSize * 1024 # en MB
+    target   = "vda"
+    driver   = "qcow2"
+  }
+}
+
+# Crear 2 VMs
+resource "opennebula_virtual_machine" "vm" {
+  count       = 2
+  name        = "opensusevm-${count.index}"
+  template_id = opennebula_template.opensuse15.id
+
+  context = {
+    SET_HOSTNAME = "$NAME"
+  }
+
+  nic {
+    network_id = 0 # usa la red creada por miniONE
   }
 }

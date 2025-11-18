@@ -15,12 +15,12 @@ variable "memoryMB" {
 
 variable "cpu" {
   description = "Número de vCPUs"
-  default     = 2
+  default     = 1
 }
 
 variable "diskSize" {
   description = "Tamaño final del disco en GB"
-  default     = 30 # <-- ¡Ajustado a 30GB!
+  default     = 10 # <-- ¡Ajustado a 10GB!
 }
 
 variable "path_to_image" {
