@@ -16,6 +16,14 @@ resource "null_resource" "fix_permissions" {
   depends_on = [libvirt_volume.os_image]
 }
 
+resource "null_resource" "resize_volume" {
+  provisioner "local-exec" {
+    command = "sudo qemu-img resize ${libvirt_volume.os_image.id} ${var.diskSize}G"
+  }
+
+  depends_on = [libvirt_volume.os_image]
+}
+
 
 #--- CUSTOMIZE ISO IMAGE
 
@@ -25,7 +33,7 @@ data "template_file" "user_data" {
   vars = {
     hostname = var.hostname
     fqdn = "${var.hostname}.${var.domain}"
-    public_key = file("${path.module}/.ssh/id_ed25519.pub")
+    public_key = file("~/.ssh/id_minione.pub")
   }
 }
 
@@ -63,6 +71,10 @@ resource "libvirt_domain" "domain-servermaas" {
   disk {
     volume_id = libvirt_volume.os_image.id
   }
+
+  # Asegurar que el resize termine antes de crear la VM
+  depends_on = [null_resource.resize_volume]
+
 
   network_interface {
     network_name = "manage"
