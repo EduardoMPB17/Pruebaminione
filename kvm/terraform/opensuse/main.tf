@@ -54,9 +54,8 @@ resource "opennebula_template" "opensuse15" {
 
   disk {
     image_id = opennebula_image.opensuse15.id
-    size     = var.diskSize * 1024 # en MB
+    size     = var.diskSize * 1024 # Convertir GB a MB
     target   = "vda"
-    driver   = "qcow2"
   }
 }
 
@@ -72,5 +71,6 @@ resource "opennebula_virtual_machine" "vm" {
 
   nic {
     network_id = 0 # usa la red creada por miniONE
+    model      = "e1000"
   }
 }

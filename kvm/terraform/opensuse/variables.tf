@@ -10,7 +10,7 @@ variable "domain" {
 
 variable "memoryMB" {
   description = "Memoria RAM en MB"
-  default     = 1024 * 8 # 8GB
+  default     = 1024 # 1GB
 }
 
 variable "cpu" {
