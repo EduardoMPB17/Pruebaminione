@@ -1,0 +1,11 @@
+<network>
+  <name>manage</name>
+  <forward mode='nat'/>
+  <bridge name='virbr2' stp='on' delay='0'/>
+  <ip address='172.16.25.1' netmask='255.255.255.0'>
+    <dhcp>
+      <!-- Reserva estática para tu VM -->
+      <host mac='52:54:00:F2:CA:68' name='minione' ip='172.16.25.2'/>
+    </dhcp>
+  </ip>
+</network>

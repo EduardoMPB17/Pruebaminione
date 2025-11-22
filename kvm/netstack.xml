@@ -1,0 +1,10 @@
+<network>
+  <name>netstack</name>
+  <forward mode='nat'/>
+  <bridge name='virbr5' stp='on' delay='0'/>
+  <ip address='172.16.200.1' netmask='255.255.255.0'>
+    <dhcp>
+      <host mac='52:54:00:F6:CD:D6' name='minione' ip='172.16.200.2'/>
+    </dhcp>
+  </ip>
+</network>
